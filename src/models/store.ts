@@ -1,4 +1,5 @@
 import { createSeedData } from "@/data/seed";
+import type { Planning } from "@/models/planning";
 import type { Price } from "@/models/price";
 import type { Product } from "@/models/product";
 import type { Recipe } from "@/models/recipe";
@@ -7,13 +8,14 @@ export interface Store {
   products: Product[];
   prices: Price[];
   recipes: Recipe[];
+  plannings: Planning[];
 }
 
 // Guarda o armazenamento no globalThis para sobreviver ao hot reload do Next.js
 const globalForStore = globalThis as unknown as { __comprasfitStore?: Store };
 
 function createStore(): Store {
-  return { ...createSeedData() };
+  return { ...createSeedData(), plannings: [] };
 }
 
 // Devolve o armazenamento em memória (cria na primeira chamada)

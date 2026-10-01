@@ -44,6 +44,8 @@ Fluxo de uma requisição: `rota → controller → schema (valida) → lib (cal
 | GET | `/api/planejamento` | Lista o histórico de planejamentos |
 | GET | `/api/planejamento/:id` | Busca um planejamento salvo |
 | PATCH | `/api/planejamento/:id/itens/:itemId` | Marca/desmarca item como comprado |
+| GET | `/api/validade` | Lista alimentos ordenados por vencimento |
+| POST | `/api/validade` | Registra a validade de um alimento |
 
 ### POST `/api/planejamento`
 
@@ -68,6 +70,14 @@ Obrigatórios: `budget`, `periodDays` (1–31), `people` (1–20). Opcionais: `m
 | 422 | Não coube: devolve `excess`, `topItems`, `suggestions` e `preview` (nada é salvo) |
 | 400 | Entrada inválida (orçamento ≤ 0, 0 pessoas, período inválido...): devolve `details` por campo |
 
+### POST `/api/validade`
+
+```json
+{ "productId": "leite", "expirationDate": "2026-10-20" }
+```
+
+Aceita `productId` ou `name`. Cada item volta com `daysLeft` e `status` (`expired`, `expiring_soon`, `ok`).
+
 ## Regras de negócio (`src/lib`)
 
 - Valores são calculados em **centavos** para evitar erro de ponto flutuante e devolvidos em reais.
@@ -75,6 +85,7 @@ Obrigatórios: `budget`, `periodDays` (1–31), `people` (1–20). Opcionais: `m
 - `calculate-packages`: calcula embalagens inteiras e a sobra.
 - `calculate-budget` / `validate-budget`: subtotais, total e checagem `total <= orçamento`.
 - `generate-planning`: filtra receitas, distribui em rodízio pelos dias e monta a lista de compras.
+- `sort-by-expiration`: ordena por vencimento e classifica a situação (perto de vencer = até 3 dias).
 
 ## Trocar o armazenamento em memória por banco
 

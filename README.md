@@ -14,6 +14,8 @@ npm test                 # testes (Vitest)
 npm run typecheck
 ```
 
+> Os dados ficam em memória: tudo o que for salvo (planejamentos, validades) é apagado ao reiniciar o servidor.
+
 ## Estrutura (MVC)
 
 ```
@@ -32,9 +34,22 @@ tests/              # Testes das regras críticas
 
 Fluxo de uma requisição: `rota → controller → schema (valida) → lib (calcula) → repository (salva/lê) → view (formata)`.
 
+## Endpoints
+
+| Método | Rota | O que faz |
+| --- | --- | --- |
+| GET | `/api/produtos` | Lista produtos com o preço mais recente |
+| GET | `/api/receitas` | Lista as receitas-base e seus ingredientes |
+
 ## Regras de negócio (`src/lib`)
 
 - Valores são calculados em **centavos** para evitar erro de ponto flutuante e devolvidos em reais.
+
+## Trocar o armazenamento em memória por banco
+
+Só a camada `src/models/repositories/` acessa os dados. Para usar Prisma + PostgreSQL, reimplemente os
+métodos de cada repositório com o `PrismaClient` (mantendo as mesmas assinaturas). Controllers, views e regras
+não precisam mudar (os repositórios passariam a ser assíncronos).
 
 ## Variáveis de ambiente
 

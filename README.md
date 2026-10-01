@@ -1,2 +1,43 @@
-# backend-ComprasFit
-Destinado ao Backand do Compras Fit
+# ComprasFit — Backend
+
+Backend do ComprasFit em **Next.js + TypeScript**, organizado em **MVC** e seguindo a arquitetura proposta
+(Route Handlers + Zod + regras de negócio em `src/lib`). Esta versão **não usa banco de dados**: os dados
+ficam em memória e são carregados de um seed.
+
+## Como rodar
+
+```bash
+npm install
+cp .env.example .env     # opcional
+npm run dev              # http://localhost:3000
+npm test                 # testes (Vitest)
+npm run typecheck
+```
+
+## Estrutura (MVC)
+
+```
+src/
+├── app/api/        # Rotas HTTP (recebem a requisição e chamam o controller)
+├── controllers/    # C — validam a entrada, chamam as regras e escolhem o status HTTP
+├── models/         # M — entidades, armazenamento em memória e repositórios
+│   └── repositories/
+├── views/          # V — formatam o JSON devolvido (valores em reais, nomes dos campos)
+├── lib/            # Regras de negócio puras (orçamento, embalagens, planejamento, validade, IA)
+├── schemas/        # Validação de entrada com Zod
+├── data/seed.ts    # Produtos, preços e receitas iniciais
+└── types/          # Tipos compartilhados
+tests/              # Testes das regras críticas
+```
+
+Fluxo de uma requisição: `rota → controller → schema (valida) → lib (calcula) → repository (salva/lê) → view (formata)`.
+
+## Regras de negócio (`src/lib`)
+
+- Valores são calculados em **centavos** para evitar erro de ponto flutuante e devolvidos em reais.
+
+## Variáveis de ambiente
+
+| Variável | Uso |
+| --- | --- |
+| `CORS_ORIGIN` | Origem do frontend liberada nas chamadas à API (padrão: `*`) |

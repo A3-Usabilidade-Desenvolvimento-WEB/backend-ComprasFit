@@ -44,6 +44,10 @@ Fluxo de uma requisição: `rota → controller → schema (valida) → lib (cal
 ## Regras de negócio (`src/lib`)
 
 - Valores são calculados em **centavos** para evitar erro de ponto flutuante e devolvidos em reais.
+- `group-ingredients`: soma os ingredientes de todas as refeições, ajustando para o número de pessoas.
+- `calculate-packages`: calcula embalagens inteiras e a sobra.
+- `calculate-budget` / `validate-budget`: subtotais, total e checagem `total <= orçamento`.
+- `generate-planning`: filtra receitas, distribui em rodízio pelos dias e monta a lista de compras.
 
 ## Trocar o armazenamento em memória por banco
 

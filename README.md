@@ -40,10 +40,41 @@ Fluxo de uma requisição: `rota → controller → schema (valida) → lib (cal
 | --- | --- | --- |
 | GET | `/api/produtos` | Lista produtos com o preço mais recente |
 | GET | `/api/receitas` | Lista as receitas-base e seus ingredientes |
+| POST | `/api/planejamento` | Gera o planejamento e a lista de compras; salva se couber no orçamento |
+| GET | `/api/planejamento` | Lista o histórico de planejamentos |
+| GET | `/api/planejamento/:id` | Busca um planejamento salvo |
+| PATCH | `/api/planejamento/:id/itens/:itemId` | Marca/desmarca item como comprado |
+
+### POST `/api/planejamento`
+
+```json
+{
+  "budget": 300,
+  "periodDays": 7,
+  "people": 4,
+  "mealsPerDay": 2,
+  "buyingPreference": "lowest_price",
+  "vegetarian": false,
+  "recipeIds": ["macarrao-molho-tomate"]
+}
+```
+
+Obrigatórios: `budget`, `periodDays` (1–31), `people` (1–20). Opcionais: `mealsPerDay` (padrão 2),
+`buyingPreference` (`lowest_price` | `variety`, padrão `lowest_price`), `vegetarian` (padrão `false`), `recipeIds`.
+
+| Status | Quando |
+| --- | --- |
+| 201 | Planejamento coube no orçamento e foi salvo |
+| 422 | Não coube: devolve `excess`, `topItems`, `suggestions` e `preview` (nada é salvo) |
+| 400 | Entrada inválida (orçamento ≤ 0, 0 pessoas, período inválido...): devolve `details` por campo |
 
 ## Regras de negócio (`src/lib`)
 
 - Valores são calculados em **centavos** para evitar erro de ponto flutuante e devolvidos em reais.
+- `group-ingredients`: soma os ingredientes de todas as refeições, ajustando para o número de pessoas.
+- `calculate-packages`: calcula embalagens inteiras e a sobra.
+- `calculate-budget` / `validate-budget`: subtotais, total e checagem `total <= orçamento`.
+- `generate-planning`: filtra receitas, distribui em rodízio pelos dias e monta a lista de compras.
 
 ## Trocar o armazenamento em memória por banco
 

@@ -1,35 +1,61 @@
 import { describe, expect, it } from "vitest";
-import { extractJson, validateAiSuggestions } from "@/lib/ai";
-
-const allowed = ["Arroz branco 5kg", "Feijão carioca 1kg", "Cebola 1kg"];
+import { DeterministicSuggestionProvider, validateAiSuggestions, validatedFallbackSuggestions } from "@/lib/ai";
+import { allowedProductNames, normalizeProductName } from "@/data/allowed-products";
 
 describe("validateAiSuggestions", () => {
-  it("aceita resposta que usa só ingredientes aprovados", () => {
+  it("aceita resposta quando todos os produtos existem na base", () => {
     const raw = {
-      suggestions: [{ name: "Arroz com feijão", ingredients: ["arroz", "Feijão"], steps: ["Cozinhe tudo."] }],
+      suggestions: [{ name: "Arroz", ingredients: ["Arroz"], steps: ["Cozinhe conforme a embalagem."] }],
     };
-    expect(validateAiSuggestions(raw, allowed)).toHaveLength(1);
+    expect(validateAiSuggestions(raw)).toHaveLength(1);
   });
 
-  it("rejeita resposta com ingrediente fora da lista", () => {
+  it("rejeita produto inexistente ou fora da base", () => {
     const raw = {
-      suggestions: [{ name: "Picanha", ingredients: ["picanha", "arroz"], steps: ["Asse."] }],
+      suggestions: [{ name: "Inválida", ingredients: ["Arroz", "ProdutoQueNaoExiste"], steps: ["Asse."] }],
     };
-    expect(validateAiSuggestions(raw, allowed)).toBeNull();
+    expect(validateAiSuggestions(raw)).toBeNull();
+  });
+
+  it("não aceita um nome parcial só porque há um produto parecido", () => {
+    const onlyBrandedMilk = new Set([normalizeProductName("Leite Integral Marca X 1L")]);
+    const raw = {
+      suggestions: [{ name: "Leite", ingredients: ["Leite"], steps: ["Sirva."] }],
+    };
+    expect(validateAiSuggestions(raw, onlyBrandedMilk)).toBeNull();
+  });
+
+  it("aceita diferenças de caixa, acento e espaços que não mudam a identidade", () => {
+    const raw = {
+      suggestions: [{ name: "Arroz", ingredients: ["  ARROZ  "], steps: ["Cozinhe."] }],
+    };
+    expect(allowedProductNames.has(normalizeProductName("arroz"))).toBe(true);
+    expect(validateAiSuggestions(raw)).toHaveLength(1);
   });
 
   it("rejeita resposta com formato incorreto", () => {
-    expect(validateAiSuggestions({ foo: "bar" }, allowed)).toBeNull();
-    expect(validateAiSuggestions(undefined, allowed)).toBeNull();
+    expect(validateAiSuggestions({ foo: "bar" })).toBeNull();
+    expect(validateAiSuggestions(undefined)).toBeNull();
   });
 });
 
-describe("extractJson", () => {
-  it("lê JSON dentro de cerca de markdown", () => {
-    expect(extractJson('```json\n{"a":1}\n```')).toEqual({ a: 1 });
+describe("DeterministicSuggestionProvider", () => {
+  it("não usa chave de LLM e só sugere com ingredientes suficientes", async () => {
+    delete process.env.LLM_API_KEY;
+    const suggestions = await new DeterministicSuggestionProvider().suggest(["Arroz", "Feijão Carioca Camil 1Kg"]);
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0].ingredients).toEqual(["Arroz", "Feijão Carioca Camil 1Kg"]);
   });
 
-  it("devolve undefined para texto que não é JSON", () => {
-    expect(extractJson("sem json aqui")).toBeUndefined();
+  it("retorna vazio quando não há ingredientes autorizados suficientes", async () => {
+    await expect(new DeterministicSuggestionProvider().suggest(["Arroz"])).resolves.toEqual([]);
+  });
+});
+
+describe("fallback", () => {
+  it("rejeita o fallback inteiro quando um ingrediente não pertence ao catálogo", () => {
+    expect(validatedFallbackSuggestions([
+      { name: "Inválida", ingredients: ["ProdutoQueNaoExiste"], steps: ["Cozinhe."] },
+    ])).toEqual([]);
   });
 });

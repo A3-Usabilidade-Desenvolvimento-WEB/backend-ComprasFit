@@ -2,7 +2,7 @@
   "name": "comprasfit-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Backend do ComprasFit (MVC em Next.js + TypeScript, sem banco de dados)",
+  "description": "Backend do ComprasFit (MVC em Next.js + TypeScript, preparado para Supabase)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "next": "^16.3.8",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

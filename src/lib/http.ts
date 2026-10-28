@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { applyCors } from "@/lib/cors";
 import type { ControllerResponse } from "@/types/http";
 
 // Lê o corpo JSON da requisição (undefined se for inválido)
@@ -11,6 +12,6 @@ export async function readJson(request: Request): Promise<unknown> {
 }
 
 // Converte a resposta do controller em resposta HTTP do Next.js
-export function respond(result: ControllerResponse): NextResponse {
-  return NextResponse.json(result.body, { status: result.status });
+export function respond(result: ControllerResponse, request: Request): NextResponse {
+  return applyCors(NextResponse.json(result.body, { status: result.status }), request);
 }

@@ -46,7 +46,7 @@ Fluxo de uma requisição: `rota → controller → schema (valida) → lib (cal
 | PATCH | `/api/planejamento/:id/itens/:itemId` | Marca/desmarca item como comprado |
 | GET | `/api/validade` | Lista alimentos ordenados por vencimento |
 | POST | `/api/validade` | Registra a validade de um alimento |
-| POST | `/api/ia/sugestao` | Sugestões culinárias (IA com validação; fallback para receita-base) |
+| POST | `/api/ia/sugestao` | Sugestões culinárias determinísticas, validadas pelo catálogo, com fallback seguro |
 
 ### POST `/api/planejamento`
 
@@ -85,8 +85,10 @@ Aceita `productId` ou `name`. Cada item volta com `daysLeft` e `status` (`expire
 { "planningId": "<id do planejamento>" }
 ```
 
-A IA recebe apenas os ingredientes da lista de compras do planejamento. Se não houver `LLM_API_KEY`, a chamada
-falhar ou a resposta usar ingrediente fora da lista, devolve as receitas-base (`"source": "fallback"`).
+O provedor local e determinístico não usa LLM, chave de API nem rede. Ele só monta receitas quando todos os
+ingredientes necessários estão simultaneamente na lista do planejamento e no catálogo autorizado. Toda saída passa
+pela validação CF-17 imediatamente antes da resposta. Quando não há ingredientes suficientes, o provedor falha ou
+devolve dados inválidos, a rota devolve receitas-base validadas (`"source": "fallback"`).
 
 ## Regras de negócio (`src/lib`)
 
@@ -97,16 +99,20 @@ falhar ou a resposta usar ingrediente fora da lista, devolve as receitas-base (`
 - `generate-planning`: filtra receitas, distribui em rodízio pelos dias e monta a lista de compras.
 - `sort-by-expiration`: ordena por vencimento e classifica a situação (perto de vencer = até 3 dias).
 
-## Trocar o armazenamento em memória por banco
+## Persistência Supabase
 
-Só a camada `src/models/repositories/` acessa os dados. Para usar Prisma + PostgreSQL, reimplemente os
-métodos de cada repositório com o `PrismaClient` (mantendo as mesmas assinaturas). Controllers, views e regras
-não precisam mudar (os repositórios passariam a ser assíncronos).
+O esquema PostgreSQL versionado está em `supabase/migrations/`. A primeira implantação deve ser feita com a
+Supabase CLI e somente então `DATA_STORE=supabase` deve ser configurado no ambiente. Enquanto isso, o modo
+`memory` mantém o comportamento atual para desenvolvimento e testes. A validação CF-17 já consulta a tabela
+`products` quando o modo Supabase está ativo; os demais repositórios ainda usam memória e serão migrados sem
+alterar os contratos HTTP.
 
 ## Variáveis de ambiente
 
 | Variável | Uso |
 | --- | --- |
 | `CORS_ORIGIN` | Origem do frontend liberada nas chamadas à API (padrão: `*`) |
-| `LLM_API_KEY` | Chave da API de LLM (só no servidor) |
-| `LLM_MODEL` | Modelo usado nas sugestões |
+| `DATA_STORE` | `memory` nos testes/desenvolvimento; `supabase` após a migration remota |
+| `SUPABASE_URL` | URL do projeto Supabase, somente no servidor |
+| `SUPABASE_PUBLISHABLE_KEY` | Chave publicável, reservada para futuro cliente autenticado |
+| `SUPABASE_SECRET_KEY` | Chave secreta, somente rotas server-side e scripts administrativos |

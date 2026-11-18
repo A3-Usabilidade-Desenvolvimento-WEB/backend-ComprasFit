@@ -41,3 +41,16 @@ describe("GET /receitas", () => {
     }
   });
 });
+
+it("classifica pelo papel do ingrediente no prato e preserva as proteínas vegetais", async () => {
+  const data = (await listRecipes()).body as ReturnType<typeof import("@/views/recipe.view").presentRecipe>[];
+  const lentils = data.find(r => r.id === "lentilha-arroz-cenoura")!;
+  expect(lentils.hasProteinMain).toBe(true);
+  expect(lentils.ingredients.find(i => i.productId === "lentilha")).toMatchObject({ foodRole: "Proteína vegetal", mainProtein: true });
+  expect(lentils.ingredients.find(i => i.productId === "cenoura")).toMatchObject({ foodRole: "Hortaliça", mainProtein: false });
+  const porridge = data.find(r => r.id === "mingau-aveia-banana")!;
+  expect(porridge.hasProteinMain).toBe(false);
+  expect(porridge.preferences.goals).not.toContain("Rico em proteína");
+  const potatoes = data.find(r => r.id === "carne-moida-batata-doce")!;
+  expect(potatoes.ingredients.find(i => i.productId === "batata-doce")?.foodRole).toBe("Carboidrato");
+});

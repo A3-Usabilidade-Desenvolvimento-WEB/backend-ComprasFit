@@ -8,6 +8,7 @@ export function presentProduct(product: Product, price?: Price) {
     id: product.id,
     name: product.name,
     category: product.category,
+    foodRole: product.foodRole ?? null,
     unit: product.unit,
     packageSize: product.packageSize,
     price: price

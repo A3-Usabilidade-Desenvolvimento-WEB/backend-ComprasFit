@@ -55,3 +55,18 @@ describe("catalog suggestions", () => {
     expect((await suggestRecipes({}, owner)).status).toBe(400);
   });
 });
+
+it("exige proteína principal no plano, na troca explícita e nas sugestões sem filtro do cliente", async () => {
+  const input = { ...planInput, requireProteinMain: true, vegetarian: true };
+  const pasta = "macarrao-molho-tomate";
+  const lentils = "lentilha-arroz-cenoura";
+  expect((await createPlanning({ ...input, recipeIds: [pasta] }, owner)).status).toBe(422);
+  expect((await createPlanning({ ...input, mealRecipeIds: [pasta] }, owner)).status).toBe(422);
+  const result = await createPlanning({ ...input, recipeIds: [lentils] }, owner);
+  expect(result.status).toBe(201);
+  const plan = result.body as Planning;
+  expect(plan.meals.map(m => m.recipeId)).toEqual([lentils]);
+  const page = (await suggestRecipes({ planningId: plan.id }, owner)).body as ReturnType<typeof presentSuggestions>;
+  expect(page.suggestions.map(r => r.recipeId)).toEqual(["omelete-arroz-legumes"]);
+  expect(page.nextOffset).toBeNull();
+});

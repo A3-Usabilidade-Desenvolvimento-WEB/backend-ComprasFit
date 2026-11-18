@@ -1,5 +1,6 @@
 export interface RecipeIngredient {
   productId: string;
+  mainProtein?: boolean;
   // Quantidade para o total de porções da receita, na unidade do produto
   quantity: number;
 }

@@ -1,4 +1,5 @@
 import { handleError } from "@/controllers/handle-error";
+import { hasProteinMain } from "@/lib/planning/protein";
 import { catalogRepository } from "@/models/repositories/catalog.repository";
 import { planningRepository } from "@/models/repositories/planning.repository";
 import { suggestionInputSchema } from "@/schemas/ai.schema";
@@ -15,7 +16,7 @@ export async function suggestRecipes(input: unknown, userId: string): Promise<Co
     if (!planning) return { status: 404, body: presentError("Planejamento não encontrado") };
 
     const { recipes, products } = await catalogRepository.load();
-    const productNames = new Map(products.map(product => [product.id, product.name]));
+    const productsById = new Map(products.map(product => [product.id, product]));
     const inPlan = new Set(planning.meals.map(meal => meal.recipeId));
     const inList = new Set(planning.shoppingList.items.map(item => item.productId));
     const eligible = eligibleRecipeIds ? new Set(eligibleRecipeIds) : null;
@@ -24,12 +25,13 @@ export async function suggestRecipes(input: unknown, userId: string): Promise<Co
         !inPlan.has(recipe.id) &&
         (!eligible || eligible.has(recipe.id)) &&
         (!planning.params.vegetarian || recipe.vegetarian) &&
+        (!planning.params.requireProteinMain || hasProteinMain(recipe, productsById)) &&
         recipe.ingredients.length > 0 &&
-        recipe.ingredients.every(ingredient => productNames.has(ingredient.productId)))
+        recipe.ingredients.every(ingredient => productsById.has(ingredient.productId)))
       .map(recipe => ({
         recipeId: recipe.id,
         name: recipe.name,
-        ingredients: recipe.ingredients.map(ingredient => productNames.get(ingredient.productId)!),
+        ingredients: recipe.ingredients.map(ingredient => productsById.get(ingredient.productId)!.name),
         steps: recipe.basePreparation,
         ingredientsInList: recipe.ingredients.filter(ingredient => inList.has(ingredient.productId)).length,
       }))

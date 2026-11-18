@@ -8,6 +8,7 @@ export interface PlanningParams {
   mealsPerDay: number;
   buyingPreference: BuyingPreference;
   vegetarian: boolean;
+  requireProteinMain?: boolean;
   recipeIds?: string[];
   mealRecipeIds?: string[];
   dayLabels?: string[];

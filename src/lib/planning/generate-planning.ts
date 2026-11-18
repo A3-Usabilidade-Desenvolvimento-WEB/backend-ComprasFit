@@ -3,6 +3,7 @@ import { calculatePackages } from "@/lib/budget/calculate-packages";
 import { checkBudget } from "@/lib/budget/validate-budget";
 import { AppError } from "@/lib/errors";
 import { reaisToCents } from "@/lib/money";
+import { hasProteinMain } from "@/lib/planning/protein";
 import { groupIngredients } from "@/lib/planning/group-ingredients";
 import type { PlanningDraft, PlanningMeal, PlanningParams, ShoppingItem } from "@/models/planning";
 import type { Price } from "@/models/price";
@@ -46,6 +47,10 @@ export function selectRecipes(params: PlanningParams, recipes: Recipe[], catalog
 
   if (params.vegetarian) {
     selected = selected.filter((recipe) => recipe.vegetarian);
+  }
+
+  if (params.requireProteinMain) {
+    selected = selected.filter(recipe => hasProteinMain(recipe, catalog.products));
   }
 
   if (selected.length === 0) {

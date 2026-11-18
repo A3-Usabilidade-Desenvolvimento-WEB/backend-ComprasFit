@@ -1,4 +1,4 @@
-import type { Product } from "@/models/product";
+import type { FoodRole, Product } from "@/models/product";
 import type { Price } from "@/models/price";
 import type { Recipe } from "@/models/recipe";
 
@@ -12,34 +12,35 @@ const STORE = "Supermercado Exemplo";
 const UPDATED_AT = "2026-09-01";
 
 // Produtos: id, nome, categoria, unidade, tamanho da embalagem, preço em centavos
-const productRows: [string, string, string, Product["unit"], number, number][] = [
-  ["arroz", "Arroz branco 5kg", "Grãos", "g", 5000, 2790],
-  ["feijao", "Feijão carioca 1kg", "Grãos", "g", 1000, 849],
-  ["lentilha", "Lentilha 500g", "Grãos", "g", 500, 799],
-  ["macarrao", "Macarrão espaguete 500g", "Grãos", "g", 500, 499],
-  ["aveia", "Aveia em flocos 170g", "Grãos", "g", 170, 429],
-  ["frango", "Peito de frango 1kg", "Carnes", "g", 1000, 1890],
-  ["carne-moida", "Carne moída 500g", "Carnes", "g", 500, 1790],
-  ["ovos", "Ovos (dúzia)", "Laticínios e ovos", "un", 12, 1150],
-  ["leite", "Leite integral 1L", "Laticínios e ovos", "ml", 1000, 529],
-  ["cebola", "Cebola 1kg", "Hortifruti", "g", 1000, 690],
-  ["tomate", "Tomate 1kg", "Hortifruti", "g", 1000, 890],
-  ["batata-doce", "Batata-doce 1kg", "Hortifruti", "g", 1000, 750],
-  ["brocolis", "Brócolis (maço 300g)", "Hortifruti", "g", 300, 550],
-  ["cenoura", "Cenoura 1kg", "Hortifruti", "g", 1000, 590],
-  ["banana", "Banana prata 1kg", "Hortifruti", "g", 1000, 649],
-  ["molho-tomate", "Molho de tomate 340g", "Mercearia", "g", 340, 279],
-  ["oleo", "Óleo de soja 900ml", "Mercearia", "ml", 900, 749],
+const productRows: [string, string, string, Product["unit"], number, number, FoodRole][] = [
+  ["arroz", "Arroz branco 5kg", "Grãos", "g", 5000, 2790, "Carboidrato"],
+  ["feijao", "Feijão carioca 1kg", "Grãos", "g", 1000, 849, "Proteína vegetal"],
+  ["lentilha", "Lentilha 500g", "Grãos", "g", 500, 799, "Proteína vegetal"],
+  ["macarrao", "Macarrão espaguete 500g", "Grãos", "g", 500, 499, "Carboidrato"],
+  ["aveia", "Aveia em flocos 170g", "Grãos", "g", 170, 429, "Carboidrato"],
+  ["frango", "Peito de frango 1kg", "Carnes", "g", 1000, 1890, "Proteína animal"],
+  ["carne-moida", "Carne moída 500g", "Carnes", "g", 500, 1790, "Proteína animal"],
+  ["ovos", "Ovos (dúzia)", "Laticínios e ovos", "un", 12, 1150, "Proteína animal"],
+  ["leite", "Leite integral 1L", "Laticínios e ovos", "ml", 1000, 529, "Laticínio"],
+  ["cebola", "Cebola 1kg", "Hortifruti", "g", 1000, 690, "Hortaliça"],
+  ["tomate", "Tomate 1kg", "Hortifruti", "g", 1000, 890, "Hortaliça"],
+  ["batata-doce", "Batata-doce 1kg", "Hortifruti", "g", 1000, 750, "Carboidrato"],
+  ["brocolis", "Brócolis (maço 300g)", "Hortifruti", "g", 300, 550, "Hortaliça"],
+  ["cenoura", "Cenoura 1kg", "Hortifruti", "g", 1000, 590, "Hortaliça"],
+  ["banana", "Banana prata 1kg", "Hortifruti", "g", 1000, 649, "Fruta"],
+  ["molho-tomate", "Molho de tomate 340g", "Mercearia", "g", 340, 279, "Molho"],
+  ["oleo", "Óleo de soja 900ml", "Mercearia", "ml", 900, 749, "Gordura"],
 ];
 
 // Cria uma cópia nova dos dados iniciais a cada chamada
 export function createSeedData(): SeedData {
-  const products: Product[] = productRows.map(([id, name, category, unit, packageSize]) => ({
+  const products: Product[] = productRows.map(([id, name, category, unit, packageSize, , foodRole]) => ({
     id,
     name,
     category,
     unit,
     packageSize,
+    foodRole,
   }));
 
   const prices: Price[] = productRows.map(([id, , , , , priceCents]) => ({
@@ -58,8 +59,8 @@ export function createSeedData(): SeedData {
       vegetarian: false,
       ingredients: [
         { productId: "arroz", quantity: 160 },
-        { productId: "feijao", quantity: 100 },
-        { productId: "frango", quantity: 300 },
+        { productId: "feijao", mainProtein: true, quantity: 100 },
+        { productId: "frango", mainProtein: true, quantity: 300 },
         { productId: "cebola", quantity: 50 },
         { productId: "oleo", quantity: 10 },
       ],
@@ -93,7 +94,7 @@ export function createSeedData(): SeedData {
       servings: 2,
       vegetarian: true,
       ingredients: [
-        { productId: "ovos", quantity: 4 },
+        { productId: "ovos", mainProtein: true, quantity: 4 },
         { productId: "arroz", quantity: 120 },
         { productId: "tomate", quantity: 100 },
         { productId: "cebola", quantity: 50 },
@@ -112,7 +113,7 @@ export function createSeedData(): SeedData {
       servings: 2,
       vegetarian: false,
       ingredients: [
-        { productId: "carne-moida", quantity: 300 },
+        { productId: "carne-moida", mainProtein: true, quantity: 300 },
         { productId: "batata-doce", quantity: 400 },
         { productId: "cebola", quantity: 50 },
         { productId: "tomate", quantity: 100 },
@@ -129,7 +130,7 @@ export function createSeedData(): SeedData {
       servings: 2,
       vegetarian: true,
       ingredients: [
-        { productId: "lentilha", quantity: 200 },
+        { productId: "lentilha", mainProtein: true, quantity: 200 },
         { productId: "arroz", quantity: 120 },
         { productId: "cenoura", quantity: 100 },
         { productId: "cebola", quantity: 50 },
@@ -146,7 +147,7 @@ export function createSeedData(): SeedData {
       servings: 2,
       vegetarian: false,
       ingredients: [
-        { productId: "frango", quantity: 300 },
+        { productId: "frango", mainProtein: true, quantity: 300 },
         { productId: "brocolis", quantity: 300 },
         { productId: "arroz", quantity: 120 },
       ],

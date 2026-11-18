@@ -27,6 +27,7 @@ export const planningInputSchema = z.object(
       .enum(["lowest_price", "variety"], { error: "A preferência de compra deve ser lowest_price ou variety" })
       .default("lowest_price"),
     vegetarian: z.boolean({ error: "A opção vegetariana deve ser verdadeiro ou falso" }).default(false),
+    requireProteinMain: z.boolean().optional(),
     mealRecipeIds: z.array(z.string().min(1)).max(124).optional(),
     dayLabels: z.array(z.string().min(1).max(40)).max(31).optional(),
     recipeIds: z.array(z.string()).optional(),

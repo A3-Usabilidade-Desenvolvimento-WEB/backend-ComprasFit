@@ -1,50 +1,57 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createPlanning } from "@/controllers/planning.controller";
 import { suggestRecipes } from "@/controllers/suggestion.controller";
-import { isAllowedProductName } from "@/data/allowed-products";
-import { resetStore } from "@/models/store";
+import { getStore, resetStore } from "@/models/store";
+import type { Planning } from "@/models/planning";
+import type { presentSuggestions } from "@/views/suggestion.view";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Json = any;
+const owner = "test-user";
+const planInput = { budget: 300, periodDays: 1, mealsPerDay: 1, people: 2 };
 
 beforeEach(() => resetStore());
 
-describe("POST /ia/sugestao", () => {
-  it("funciona sem LLM_API_KEY e usa fallback seguro quando o planejamento não contém ingredientes suficientes", async () => {
-    delete process.env.LLM_API_KEY;
-    const created = (await createPlanning({ budget: 300, periodDays: 7, people: 4 }, "test-user")).body as Json;
-    const response = await suggestRecipes({ planningId: created.id }, "test-user");
-    const body = response.body as Json;
-    expect(response.status).toBe(200);
-    expect(body.source).toBe("fallback");
-    expect(body.suggestions).not.toHaveLength(0);
+describe("catalog suggestions", () => {
+  it("pages through real recipes without repeating planned or previously suggested recipes", async () => {
+    const plan = (await createPlanning(planInput, owner)).body as Planning;
+    const first = await suggestRecipes({ planningId: plan.id }, owner);
+    expect(first.status).toBe(200);
+    const page = first.body as ReturnType<typeof presentSuggestions>;
+    expect(page.source).toBe("catalog");
+    expect(page.nextOffset).toBe(3);
+    const second = (await suggestRecipes({ planningId: plan.id, offset: page.nextOffset }, owner)).body as ReturnType<typeof presentSuggestions>;
+    expect(second.nextOffset).toBeNull();
+    expect(second.suggestions).toHaveLength(3);
+
+    const inList = new Set(plan.shoppingList.items.map(item => item.productId));
+    const products = new Set(getStore().products.map(product => product.name));
+    const suggestions = [...page.suggestions, ...second.suggestions];
+    expect(new Set(suggestions.map(item => item.recipeId)).size).toBe(6);
+    expect(suggestions.map(item => item.recipeId)).not.toContain(plan.meals[0].recipeId);
+    for (const item of suggestions) {
+      const recipe = getStore().recipes.find(candidate => candidate.id === item.recipeId)!;
+      expect(item.steps).toEqual(recipe.basePreparation);
+      expect(item.ingredients.every(name => products.has(name))).toBe(true);
+      expect(item.ingredientsInList).toBe(recipe.ingredients.filter(ingredient => inList.has(ingredient.productId)).length);
+    }
+    const scores = suggestions.map(item => item.ingredientsInList / item.ingredients.length);
+    expect(scores).toEqual([...scores].sort((a, b) => b - a));
   });
 
-  it("devolve 404 para planejamento inexistente e 400 sem planningId", async () => {
-    expect((await suggestRecipes({ planningId: "x" }, "test-user")).status).toBe(404);
-    expect((await suggestRecipes({}, "test-user")).status).toBe(400);
+  it("honors compatible recipes and vegetarian plans, including an empty allowed list", async () => {
+    const plan = (await createPlanning({ ...planInput, vegetarian: true, recipeIds: ["macarrao-molho-tomate"] }, owner)).body as Planning;
+    const filter = { planningId: plan.id, eligibleRecipeIds: ["arroz-feijao-frango", "lentilha-arroz-cenoura"] };
+    const result = (await suggestRecipes(filter, owner)).body as ReturnType<typeof presentSuggestions>;
+    expect(result.suggestions.map(item => item.recipeId)).toEqual(["lentilha-arroz-cenoura"]);
+    expect(result.nextOffset).toBeNull();
+    expect((await suggestRecipes({ ...filter, eligibleRecipeIds: [] }, owner)).body).toEqual({
+      source: "catalog", suggestions: [], nextOffset: null,
+    });
   });
 
-  it("rejeita resposta inválida de provedor injetado sem vazar ingrediente proibido", async () => {
-    const created = (await createPlanning({ budget: 300, periodDays: 7, people: 4 }, "test-user")).body as Json;
-    const body = (await suggestRecipes({ planningId: created.id }, "test-user", {
-      suggest: async () => [{ name: "Inválida", ingredients: ["ProdutoQueNaoExiste"], steps: ["Cozinhe."] }],
-    })).body as Json;
-    expect(body.source).toBe("fallback");
-    expect(JSON.stringify(body)).not.toContain("ProdutoQueNaoExiste");
-  });
-
-  it("usa fallback quando o provedor falha", async () => {
-    const created = (await createPlanning({ budget: 300, periodDays: 7, people: 4 }, "test-user")).body as Json;
-    const body = (await suggestRecipes({ planningId: created.id }, "test-user", {
-      suggest: async () => { throw new Error("falha controlada"); },
-    })).body as Json;
-    expect(body.source).toBe("fallback");
-  });
-
-  it("valida todos os ingredientes retornados pelo fallback", async () => {
-    const created = (await createPlanning({ budget: 300, periodDays: 7, people: 4 }, "test-user")).body as Json;
-    const body = (await suggestRecipes({ planningId: created.id }, "test-user")).body as Json;
-    expect(body.suggestions.flatMap((suggestion: Json) => suggestion.ingredients).every(isAllowedProductName)).toBe(true);
+  it("rejects invalid paging and forbids reading another user's plan", async () => {
+    const plan = (await createPlanning(planInput, owner)).body as Planning;
+    expect((await suggestRecipes({ planningId: plan.id }, "another-user")).status).toBe(404);
+    expect((await suggestRecipes({ planningId: plan.id, offset: -1 }, owner)).status).toBe(400);
+    expect((await suggestRecipes({}, owner)).status).toBe(400);
   });
 });

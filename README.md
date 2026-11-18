@@ -45,7 +45,7 @@ Fluxo de uma requisição: `rota → controller → schema (valida) → lib (cal
 | PATCH | `/api/planejamento/:id/itens/:itemId` | Marca/desmarca item como comprado |
 | GET | `/api/validade` | Lista alimentos ordenados por vencimento |
 | POST | `/api/validade` | Registra a validade de um alimento |
-| POST | `/api/ia/sugestao` | Sugestões culinárias determinísticas, validadas pelo catálogo, com fallback seguro |
+| POST | `/api/ia/sugestao` | Sugestões paginadas do catálogo, priorizadas pela lista de compras |
 
 ### POST `/api/planejamento`
 
@@ -84,10 +84,7 @@ Aceita `productId` ou `name`. Cada item volta com `daysLeft` e `status` (`expire
 { "planningId": "<id do planejamento>" }
 ```
 
-O provedor local e determinístico não usa LLM, chave de API nem rede. Ele só monta receitas quando todos os
-ingredientes necessários estão simultaneamente na lista do planejamento e no catálogo autorizado. Toda saída passa
-pela validação CF-17 imediatamente antes da resposta. Quando não há ingredientes suficientes, o provedor falha ou
-devolve dados inválidos, a rota devolve receitas-base validadas (`"source": "fallback"`).
+A rota usa o catálogo de receitas e verifica a propriedade do plano. Ela exclui receitas do cardápio atual e prioriza as que aproveitam mais produtos da lista de compras. Envie `offset` para continuar a partir de `nextOffset` e, opcionalmente, `eligibleRecipeIds` para restringir as opções aos filtros de equipamentos e restrições do perfil. Cada resposta traz até três receitas. `nextOffset: null` indica o fim da lista.
 
 ## Regras de negócio (`src/lib`)
 

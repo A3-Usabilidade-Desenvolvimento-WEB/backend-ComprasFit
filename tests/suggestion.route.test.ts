@@ -5,29 +5,23 @@ vi.mock("@/lib/auth", () => ({
 }));
 import { POST } from "@/app/api/ia/sugestao/route";
 import { createPlanning } from "@/controllers/planning.controller";
-import { planningRepository } from "@/models/repositories/planning.repository";
 import { resetStore } from "@/models/store";
+import type { presentSuggestions } from "@/views/suggestion.view";
 
 beforeEach(() => resetStore());
 
 describe("POST /api/ia/sugestao", () => {
-  it("responde com sugestão determinística quando o planejamento tem ingredientes autorizados", async () => {
-    const created = (await createPlanning({ budget: 300, periodDays: 7, people: 4 }, "test-user")).body as { id: string };
-    const planning = await planningRepository.findById(created.id, "test-user");
-    if (!planning) throw new Error("Planejamento deveria existir");
-    planning.shoppingList.items = [
-      { ...planning.shoppingList.items[0], productName: "Arroz" },
-      { ...planning.shoppingList.items[0], id: "feijao-catalogo", productName: "Feijão Carioca Camil 1Kg" },
-    ];
-
+  it("returns real recipe IDs, preparation and pagination metadata", async () => {
+    const created = (await createPlanning({ budget: 300, periodDays: 1, mealsPerDay: 1, people: 2 }, "test-user")).body as { id: string };
     const response = await POST(new Request("http://localhost/api/ia/sugestao", {
       method: "POST",
       body: JSON.stringify({ planningId: created.id }),
       headers: { "content-type": "application/json" },
     }));
-    const body = await response.json() as { source: string; suggestions: { ingredients: string[] }[] };
+    const body = await response.json() as ReturnType<typeof presentSuggestions>;
     expect(response.status).toBe(200);
-    expect(body.source).toBe("deterministic");
-    expect(body.suggestions[0].ingredients).toEqual(["Arroz", "Feijão Carioca Camil 1Kg"]);
+    expect(body.source).toBe("catalog");
+    expect(body.nextOffset).toBe(3);
+    expect(body.suggestions.every(recipe => recipe.recipeId && recipe.steps.length > 0)).toBe(true);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DeterministicSuggestionProvider, validateAiSuggestions, validatedFallbackSuggestions } from "@/lib/ai";
+import { validateAiSuggestions } from "@/lib/ai";
 import { allowedProductNames, normalizeProductName } from "@/data/allowed-products";
 
 describe("validateAiSuggestions", () => {
@@ -36,26 +36,5 @@ describe("validateAiSuggestions", () => {
   it("rejeita resposta com formato incorreto", () => {
     expect(validateAiSuggestions({ foo: "bar" })).toBeNull();
     expect(validateAiSuggestions(undefined)).toBeNull();
-  });
-});
-
-describe("DeterministicSuggestionProvider", () => {
-  it("não usa chave de LLM e só sugere com ingredientes suficientes", async () => {
-    delete process.env.LLM_API_KEY;
-    const suggestions = await new DeterministicSuggestionProvider().suggest(["Arroz", "Feijão Carioca Camil 1Kg"]);
-    expect(suggestions).toHaveLength(1);
-    expect(suggestions[0].ingredients).toEqual(["Arroz", "Feijão Carioca Camil 1Kg"]);
-  });
-
-  it("retorna vazio quando não há ingredientes autorizados suficientes", async () => {
-    await expect(new DeterministicSuggestionProvider().suggest(["Arroz"])).resolves.toEqual([]);
-  });
-});
-
-describe("fallback", () => {
-  it("rejeita o fallback inteiro quando um ingrediente não pertence ao catálogo", () => {
-    expect(validatedFallbackSuggestions([
-      { name: "Inválida", ingredients: ["ProdutoQueNaoExiste"], steps: ["Cozinhe."] },
-    ])).toEqual([]);
   });
 });

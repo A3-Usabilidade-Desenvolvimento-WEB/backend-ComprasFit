@@ -18,7 +18,7 @@ O Expo usa a chave publicável com o SDK Supabase Auth para cadastro com nome, c
 | PATCH /api/planejamento/:id/itens/:itemId | Privado | `{ purchased: boolean }` | 200, Item |
 | GET /api/validade | Privado | — | 200, Validade[], por vencimento |
 | POST /api/validade | Privado | `{ expirationDate, productId?, name? }` | 201, Validade |
-| POST /api/ia/sugestao | Privado | `{ planningId: string }` | 200, `{ source, suggestions: [{ name, ingredients: string[], steps: string[] }] }` |
+| POST /api/ia/sugestao | Privado | `{ planningId: string, offset?: number, eligibleRecipeIds?: string[] }` | 200, `{ source, suggestions, nextOffset }` |
 
 ## Campos
 
@@ -31,7 +31,7 @@ O Expo usa a chave publicável com o SDK Supabase Auth para cadastro com nome, c
 | Item | `id, productId, name, category, unit, quantityNeeded, packageSize, packages, leftover, unitPrice, subtotal, purchased`. O preço unitário é por embalagem. O ID do item é local ao plano. |
 | Resumo | `id, createdAt, budget, total, periodDays, people, itemsPurchased, itemsTotal`. |
 | Validade | `id, name, productId, expirationDate, daysLeft, status, registeredAt`. Ao registrar, informe uma data real AAAA-MM-DD e pelo menos um de nome (1–100 caracteres) ou ID do produto. Na resposta o ID pode ser nulo. Situações: `expired`, `expiring_soon` (0 a 3 dias) e `ok`. |
-| Sugestões | `source` é `deterministic` para combinação da lista ou `fallback` para receitas de referência do catálogo. |
+| Sugestões | `source: "catalog"`, `suggestions: [{ recipeId, name, ingredients: string[], steps: string[], ingredientsInList }]` e `nextOffset` nulo na última página. A contagem compara produtos com a lista do plano. |
 
 ## Erros
 
@@ -53,9 +53,9 @@ As imagens e opções de interface são recursos de apresentação. A API fornec
 
 ## IA no projeto acadêmico
 
-O endpoint combina os ingredientes do plano com duas receitas escritas previamente, usando nomes validados pelo catálogo. Os nomes comerciais dos modelos podem diferir dos nomes das embalagens do catálogo inicial. Nesse caso, a API identifica as sugestões como receitas de referência (`fallback`). Esse fluxo funciona sem chave de IA ou chamada a um modelo generativo.
+O endpoint recomenda alternativas do catálogo por página. A ordenação prioriza o reaproveitamento de produtos da lista do usuário e exclui as receitas já planejadas.
 
-Para experimentar geração de texto, o Google oferece entrada e saída gratuitas no Free Tier do Gemini 3.5 Flash-Lite, com cotas por projeto. Um adaptador futuro de `SuggestionProvider` pode enviar apenas nomes de ingredientes, verificar se a resposta usa somente os ingredientes recebidos e identificar o provedor real na resposta. O Google pode usar o conteúdo da modalidade gratuita para melhorar produtos. [Preços da Gemini API](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite) · [Limites de uso](https://ai.google.dev/gemini-api/docs/rate-limits).
+Para experimentar geração de texto, o Google oferece entrada e saída gratuitas no Free Tier do Gemini 3.5 Flash-Lite, com cotas por projeto. Uma integração futura pode enviar apenas nomes de ingredientes, verificar se a resposta usa somente os ingredientes recebidos e identificar o provedor real na resposta. O Google pode usar o conteúdo da modalidade gratuita para melhorar produtos. [Preços da Gemini API](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite) · [Limites de uso](https://ai.google.dev/gemini-api/docs/rate-limits).
 
 ## Arquivos desta integração
 

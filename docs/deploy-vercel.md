@@ -16,4 +16,4 @@ Use o repositório do backend como raiz do projeto Vercel e o preset Next.js. O 
 4. Cadastre as variáveis em Production e nos ambientes de Preview utilizados. Faça o deploy do backend antes de publicar o Expo, que consome os novos campos de receitas. Alterações nas variáveis precisam de um novo deploy.
 5. Para desenvolvimento, copie `.env.example` para `.env.local`. `DATA_STORE=memory` usa dados de processo e continua exigindo Supabase Auth nas rotas privadas. Para testar a persistência, use `DATA_STORE=supabase` com um projeto de desenvolvimento migrado. Inicie a API com `npm run dev`.
 
-O provedor de sugestões atual funciona sem chave de IA.
+As sugestões paginadas vêm do catálogo de receitas.

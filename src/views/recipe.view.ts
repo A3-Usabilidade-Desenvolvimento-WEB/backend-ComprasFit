@@ -9,7 +9,8 @@ export function presentRecipe(recipe: Recipe, products: Map<string, Product>) {
     name: recipe.name,
     servings: recipe.servings,
     vegetarian: recipe.vegetarian,
-    preferences: recipePreferences[recipe.id] ?? { restrictions: recipe.vegetarian ? ["Vegetariano"] : [], appliances: [], goals: [] },
+    preparationMinutes: recipe.preparationMinutes ?? null,
+    preferences: recipe.preferences ?? recipePreferences[recipe.id] ?? { restrictions: recipe.vegetarian ? ["Vegetariano"] : [], appliances: [], goals: [] },
     steps: recipe.basePreparation,
     ingredients: recipe.ingredients.map((ingredient) => {
       const product = products.get(ingredient.productId);

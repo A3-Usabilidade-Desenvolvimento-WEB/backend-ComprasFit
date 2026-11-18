@@ -10,6 +10,8 @@ export interface Recipe {
   // Número de porções que a receita rende
   servings: number;
   vegetarian: boolean;
+  preparationMinutes?: number | null;
+  preferences?: { restrictions: string[]; appliances: string[]; goals: string[] } | null;
   ingredients: RecipeIngredient[];
   // Passos de preparo usados quando a IA não responde
   basePreparation: string[];

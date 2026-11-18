@@ -28,3 +28,21 @@ it("só permite revisar o próprio plano e limita Gemini às dicas calculadas", 
     source: "rules", tips: [expect.stringContaining("almoço e jantar"), expect.stringContaining("referências acadêmicas")],
   });
 });
+
+it("explica a lista salva e simula só receitas compatíveis sem alterar o cardápio", async () => {
+  vi.stubEnv("GEMINI_API_KEY", "");
+  const recipeId = "lentilha-arroz-cenoura";
+  const input = { budget: 750, people: 2, periodDays: 2, mealsPerDay: 1, mealKind: "main", vegan: true,
+    recipeIds: [recipeId], dayLabels: ["Segunda-feira", "Terça-feira"] };
+  const saved = await createPlanning(input, "owner");
+  expect(saved.status).toBe(201);
+  const { id } = saved.body as { id: string };
+  const result = await reviewPlan({ planningId: id, eligibleRecipeIds: ["macarrao-molho-tomate", "omelete-arroz-legumes"] }, "owner");
+  expect(result.body).toMatchObject({ source: "rules", sections: expect.arrayContaining([
+    { title: "Cobertura e custo médio", detail: expect.stringContaining("4 porções") },
+    { title: "Variedade do cardápio", detail: expect.stringContaining("(2 vezes)") },
+    { title: "Troca simulada", detail: expect.stringMatching(/Segunda-feira.*Macarrão ao molho de tomate/) },
+  ]) });
+  expect((await reviewPlan({ planningId: id, eligibleRecipeIds: ["omelete-arroz-legumes"] }, "owner")).body)
+    .not.toMatchObject({ sections: expect.arrayContaining([expect.objectContaining({ title: "Troca simulada" })]) });
+});

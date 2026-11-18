@@ -70,3 +70,16 @@ it("exige proteína principal no plano, na troca explícita e nas sugestões sem
   expect(page.suggestions.map(r => r.recipeId)).toEqual(["omelete-arroz-legumes"]);
   expect(page.nextOffset).toBeNull();
 });
+
+it("aplica veganismo no plano e nas sugestões mesmo sem a lista de receitas do cliente", async () => {
+  const input = { ...planInput, mealKind: "main", vegan: true };
+  const omelette = "omelete-arroz-legumes";
+  const lentils = "lentilha-arroz-cenoura";
+  const pasta = "macarrao-molho-tomate";
+  expect((await createPlanning({ ...input, mealRecipeIds: [omelette] }, owner)).status).toBe(422);
+  const result = await createPlanning({ ...input, recipeIds: [lentils] }, owner);
+  expect(result.status).toBe(201);
+  const plan = result.body as Planning;
+  const page = (await suggestRecipes({ planningId: plan.id }, owner)).body as ReturnType<typeof presentSuggestions>;
+  expect(page.suggestions.map(r => r.recipeId)).toEqual([pasta]);
+});

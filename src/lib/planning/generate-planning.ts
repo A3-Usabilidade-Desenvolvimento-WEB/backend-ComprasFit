@@ -1,3 +1,4 @@
+import { isVeganRecipe } from "@/data/recipe-preferences";
 import { calculateSubtotal, calculateTotal } from "@/lib/budget/calculate-budget";
 import { calculatePackages } from "@/lib/budget/calculate-packages";
 import { checkBudget } from "@/lib/budget/validate-budget";
@@ -52,6 +53,10 @@ export function selectRecipes(params: PlanningParams, recipes: Recipe[], catalog
 
   if (params.vegetarian) {
     selected = selected.filter((recipe) => recipe.vegetarian);
+  }
+
+  if (params.vegan) {
+    selected = selected.filter(isVeganRecipe);
   }
 
   if (params.requireProteinMain) {

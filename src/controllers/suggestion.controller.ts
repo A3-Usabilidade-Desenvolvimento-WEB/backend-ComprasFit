@@ -1,3 +1,4 @@
+import { isVeganRecipe } from "@/data/recipe-preferences";
 import { handleError } from "@/controllers/handle-error";
 import { mealKind } from "@/lib/planning/meal-kind";
 import { hasProteinMain } from "@/lib/planning/protein";
@@ -25,6 +26,7 @@ export async function suggestRecipes(input: unknown, userId: string): Promise<Co
       .filter(recipe =>
         !inPlan.has(recipe.id) &&
         (!eligible || eligible.has(recipe.id)) &&
+        (!planning.params.vegan || isVeganRecipe(recipe)) &&
         (!planning.params.vegetarian || recipe.vegetarian) &&
         (!planning.params.mealKind || mealKind(recipe, productsById) === planning.params.mealKind) &&
         (!planning.params.requireProteinMain || hasProteinMain(recipe, productsById)) &&

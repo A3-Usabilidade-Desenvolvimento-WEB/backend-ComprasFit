@@ -46,6 +46,7 @@ Fluxo de uma requisição: `rota → controller → schema (valida) → lib (cal
 | GET | `/api/validade` | Lista alimentos ordenados por vencimento |
 | POST | `/api/validade` | Registra a validade de um alimento |
 | POST | `/api/ia/sugestao` | Sugestões paginadas do catálogo, priorizadas pela lista de compras |
+| POST | `/api/ia/revisao` | Dicas verificadas para interpretar o cardápio salvo |
 
 ### POST `/api/planejamento`
 
@@ -62,7 +63,7 @@ Fluxo de uma requisição: `rota → controller → schema (valida) → lib (cal
 ```
 
 Obrigatórios: `budget`, `periodDays` (1–31), `people` (1–20). Opcionais: `mealsPerDay` (padrão 2),
-`buyingPreference` (`lowest_price` | `variety`, padrão `lowest_price`), `vegetarian` (padrão `false`), `recipeIds`.
+`buyingPreference` (`lowest_price` | `variety`, padrão `lowest_price`), `vegetarian` (padrão `false`), `recipeIds` e `mealKind` (`main` para pratos principais ou `snack` para lanches).
 
 | Status | Quando |
 | --- | --- |
@@ -86,13 +87,17 @@ Aceita `productId` ou `name`. Cada item volta com `daysLeft` e `status` (`expire
 
 A rota usa o catálogo de receitas e verifica a propriedade do plano. Ela exclui receitas do cardápio atual e prioriza as que aproveitam mais produtos da lista de compras. Envie `offset` para continuar a partir de `nextOffset` e, opcionalmente, `eligibleRecipeIds` para restringir as opções aos filtros de equipamentos e restrições do perfil. Cada resposta traz até três receitas. `nextOffset: null` indica o fim da lista.
 
+### POST `/api/ia/revisao`
+
+Envie `{ "planningId": "<id do planejamento>" }` com a sessão do proprietário. A resposta traz `tips` e `source` (`gemini` ou `rules`). O Gemini só prioriza dicas escritas pelo sistema a partir de indicadores agregados do plano. Configure `GEMINI_API_KEY` no ambiente do backend para ativar a priorização. `GEMINI_MODEL` é opcional e o padrão é `gemini-3.5-flash-lite`.
+
 ## Regras de negócio (`src/lib`)
 
 - Valores são calculados em **centavos** para evitar erro de ponto flutuante e devolvidos em reais.
 - `group-ingredients`: soma os ingredientes de todas as refeições, ajustando para o número de pessoas.
 - `calculate-packages`: calcula embalagens inteiras e a sobra.
 - `calculate-budget` / `validate-budget`: subtotais, total e checagem `total <= orçamento`.
-- `generate-planning`: filtra receitas, distribui em rodízio pelos dias e monta a lista de compras.
+- `generate-planning`: filtra receitas, distribui em rodízio pelos dias e calcula as embalagens da lista. Para planos com tipo de refeição, quando a combinação inicial excede o teto, avalia combinações alternativas com preços do catálogo.
 - `sort-by-expiration`: ordena por vencimento e classifica a situação (perto de vencer = até 3 dias).
 
 ## Persistência e integração

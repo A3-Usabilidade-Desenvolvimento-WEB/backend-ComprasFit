@@ -1,4 +1,5 @@
 import { handleError } from "@/controllers/handle-error";
+import { mealKind } from "@/lib/planning/meal-kind";
 import { hasProteinMain } from "@/lib/planning/protein";
 import { catalogRepository } from "@/models/repositories/catalog.repository";
 import { planningRepository } from "@/models/repositories/planning.repository";
@@ -25,6 +26,7 @@ export async function suggestRecipes(input: unknown, userId: string): Promise<Co
         !inPlan.has(recipe.id) &&
         (!eligible || eligible.has(recipe.id)) &&
         (!planning.params.vegetarian || recipe.vegetarian) &&
+        (!planning.params.mealKind || mealKind(recipe, productsById) === planning.params.mealKind) &&
         (!planning.params.requireProteinMain || hasProteinMain(recipe, productsById)) &&
         recipe.ingredients.length > 0 &&
         recipe.ingredients.every(ingredient => productsById.has(ingredient.productId)))

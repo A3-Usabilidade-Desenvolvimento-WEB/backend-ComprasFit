@@ -1,3 +1,4 @@
+import { mealKind } from "@/lib/planning/meal-kind";
 import { hasProteinMain, isMainProtein } from "@/lib/planning/protein";
 import { recipePreferences } from "@/data/recipe-preferences";
 import type { Product } from "@/models/product";
@@ -17,6 +18,7 @@ export function presentRecipe(recipe: Recipe, products: Map<string, Product>) {
     servings: recipe.servings,
     vegetarian: recipe.vegetarian,
     preparationMinutes: recipe.preparationMinutes ?? null,
+    mealKind: mealKind(recipe, products),
     hasProteinMain: proteinMain,
     preferences: { ...preferences, goals },
     steps: recipe.basePreparation,

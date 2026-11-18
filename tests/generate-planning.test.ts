@@ -115,3 +115,18 @@ describe("suggestAdjustments", () => {
     expect(adjustments.suggestions.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+it("monta almoços e jantares variados dentro do teto e exclui acompanhamento e lanche", () => {
+  const params = { ...baseParams, periodDays: 2, people: 1, budget: 750, mealKind: "main", buyingPreference: "variety" } as const;
+  const side = { ...recipes.find(r => r.id === "mingau-aveia-banana")!, id: "batata-cenoura", name: "Batata e cenoura" };
+  const all = [side, ...recipes];
+  const plan = generatePlanning(params, all, catalog);
+  expect(plan.fitsBudget).toBe(true);
+  expect(new Set(plan.meals.map(m => m.recipeId)).size).toBe(4);
+  expect(plan.meals.every(m => !["batata-cenoura", "mingau-aveia-banana"].includes(m.recipeId))).toBe(true);
+  expect(() => generatePlanning({ ...params, mealRecipeIds: Array(4).fill(side.id) }, all, catalog)).toThrow(/incompatível/);
+
+  const cheaper = generatePlanning({ ...params, budget: 70 }, all, catalog);
+  expect(cheaper.fitsBudget).toBe(true);
+  expect(cheaper.shoppingList.totalCents).toBeLessThan(plan.shoppingList.totalCents);
+});

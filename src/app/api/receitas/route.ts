@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 // GET /api/receitas
 export async function GET(request: Request) {
-  return respond(listRecipes(), request);
+  return respond(await listRecipes(), request);
 }
 
 export function OPTIONS(request: Request) { return corsPreflight(request); }

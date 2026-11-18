@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 let client: SupabaseClient | undefined;
 
 export function usesSupabase(): boolean {
-  return process.env.DATA_STORE === "supabase";
+  return process.env.DATA_STORE === "supabase" || (process.env.NODE_ENV === "production" && process.env.DATA_STORE !== "memory");
 }
 
 export function getSupabase(): SupabaseClient {

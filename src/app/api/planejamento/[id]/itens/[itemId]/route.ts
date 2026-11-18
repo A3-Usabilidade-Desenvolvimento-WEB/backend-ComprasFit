@@ -11,7 +11,7 @@ export async function PATCH(
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
   const { id, itemId } = await params;
-  return respond(setItemPurchased(id, itemId, await readJson(request)), request);
+  return respond(await setItemPurchased(id, itemId, await readJson(request), auth.user.id), request);
 }
 
 export function OPTIONS(request: Request) { return corsPreflight(request); }

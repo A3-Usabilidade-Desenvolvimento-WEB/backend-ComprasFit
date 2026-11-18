@@ -32,11 +32,17 @@ export async function requireAuthenticatedUser(request: Request): Promise<Authen
     return errorResponse(request, 500, "Autenticação do servidor não configurada");
   }
 
-  const authClient = createClient(url, publishableKey, {
-    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-  });
-  const { data, error } = await authClient.auth.getUser(token);
-  if (error || !data.user) return errorResponse(request, 401, "Token de autenticação inválido ou expirado");
-
-  return { ok: true, user: { id: data.user.id, email: data.user.email } };
+  try {
+    const authClient = createClient(url, publishableKey, {
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+    });
+    const { data, error } = await authClient.auth.getUser(token);
+    if (error && (!error.status || error.status >= 500)) {
+      return errorResponse(request, 503, "Serviço de autenticação indisponível");
+    }
+    if (error || !data.user) return errorResponse(request, 401, "Token de autenticação inválido ou expirado");
+    return { ok: true, user: { id: data.user.id, email: data.user.email } };
+  } catch {
+    return errorResponse(request, 500, "Falha na configuração ou comunicação com o serviço de autenticação");
+  }
 }

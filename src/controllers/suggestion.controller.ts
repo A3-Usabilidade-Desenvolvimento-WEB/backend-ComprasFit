@@ -15,11 +15,12 @@ import { presentSuggestions } from "@/views/suggestion.view";
 
 export async function suggestRecipes(
   input: unknown,
+  userId: string,
   provider: SuggestionProvider = deterministicSuggestionProvider,
 ): Promise<ControllerResponse> {
   try {
     const { planningId } = suggestionInputSchema.parse(input);
-    const planning = planningRepository.findById(planningId);
+    const planning = await planningRepository.findById(planningId, userId);
     if (!planning) return { status: 404, body: presentError("Planejamento não encontrado") };
 
     // Client data cannot enlarge this list: every item is rechecked against CF-17.

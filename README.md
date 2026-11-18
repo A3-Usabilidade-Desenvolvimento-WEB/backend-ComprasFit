@@ -1,20 +1,19 @@
 # ComprasFit — Backend
 
 Backend do ComprasFit em **Next.js + TypeScript**, organizado em **MVC** e seguindo a arquitetura proposta
-(Route Handlers + Zod + regras de negócio em `src/lib`). Esta versão **não usa banco de dados**: os dados
-ficam em memória e são carregados de um seed.
+(Route Handlers + Zod + regras de negócio em `src/lib`). O backend usa Supabase em produção e oferece armazenamento em memória para desenvolvimento.
 
 ## Como rodar
 
 ```bash
-npm install
-cp .env.example .env     # opcional
+npm ci
+cp .env.example .env.local  # preencha as variáveis de Auth
 npm run dev              # http://localhost:3000
 npm test                 # testes (Vitest)
 npm run typecheck
 ```
 
-> Os dados ficam em memória: tudo o que for salvo (planejamentos, validades) é apagado ao reiniciar o servidor.
+> Com DATA_STORE=memory, tudo o que for salvo (planejamentos, validades) é apagado ao reiniciar o servidor.
 
 ## Estrutura (MVC)
 
@@ -99,20 +98,8 @@ devolve dados inválidos, a rota devolve receitas-base validadas (`"source": "fa
 - `generate-planning`: filtra receitas, distribui em rodízio pelos dias e monta a lista de compras.
 - `sort-by-expiration`: ordena por vencimento e classifica a situação (perto de vencer = até 3 dias).
 
-## Persistência Supabase
+## Persistência e integração
 
-O esquema PostgreSQL versionado está em `supabase/migrations/`. A primeira implantação deve ser feita com a
-Supabase CLI e somente então `DATA_STORE=supabase` deve ser configurado no ambiente. Enquanto isso, o modo
-`memory` mantém o comportamento atual para desenvolvimento e testes. A validação CF-17 já consulta a tabela
-`products` quando o modo Supabase está ativo; os demais repositórios ainda usam memória e serão migrados sem
-alterar os contratos HTTP.
+As migrations em `supabase/migrations/` criam o esquema, os controles de acesso e o catálogo inicial. A API identifica o proprietário a partir da sessão Supabase e grava cada plano em uma única transação.
 
-## Variáveis de ambiente
-
-| Variável | Uso |
-| --- | --- |
-| `CORS_ORIGIN` | Origem do frontend liberada nas chamadas à API (padrão: `*`) |
-| `DATA_STORE` | `memory` nos testes/desenvolvimento; `supabase` após a migration remota |
-| `SUPABASE_URL` | URL do projeto Supabase, somente no servidor |
-| `SUPABASE_PUBLISHABLE_KEY` | Chave publicável, reservada para futuro cliente autenticado |
-| `SUPABASE_SECRET_KEY` | Chave secreta, somente rotas server-side e scripts administrativos |
+Consulte o [contrato de rotas e telas](docs/frontend-handoff.md), as [variáveis e etapas de deploy](docs/deploy-vercel.md) e a [origem dos dados do catálogo](docs/catalogo-supabase.md).

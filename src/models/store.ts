@@ -9,8 +9,8 @@ export interface Store {
   products: Product[];
   prices: Price[];
   recipes: Recipe[];
-  plannings: Planning[];
-  expirations: FoodExpiration[];
+  plannings: (Planning & { userId: string })[];
+  expirations: (FoodExpiration & { userId: string })[];
 }
 
 // Guarda o armazenamento no globalThis para sobreviver ao hot reload do Next.js

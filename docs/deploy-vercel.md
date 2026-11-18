@@ -1,33 +1,19 @@
-# Deploy do backend na Vercel
+# Deploy do backend
 
-## Variáveis de ambiente
+Use o repositório do backend como raiz do projeto Vercel e o preset Next.js. O `vercel.json` usa `npm ci` e `npm run build`. O App Router publica as sete rotas como funções. Confira o deploy em `/api/receitas`. A raiz do domínio não tem página de apresentação.
 
-Cadastre em **Production** e, se houver deploy de teste, em **Preview**:
+| Variável na Vercel | Valor |
+| --- | --- |
+| DATA_STORE | `supabase` |
+| SUPABASE_URL | URL do mesmo projeto usado no Expo |
+| SUPABASE_PUBLISHABLE_KEY | Chave publicável para validar a sessão |
+| SUPABASE_SECRET_KEY | Chave secreta do servidor para o banco |
+| CORS_ORIGIN | Opcional. Origens extras exatas, separadas por vírgulas. A configuração padrão inclui `https://comprasfit-swart.vercel.app,http://localhost:8081,http://localhost:19006`. |
 
-| Nome | Valor | Sigilo |
-| --- | --- | --- |
-| `DATA_STORE` | `supabase` | Não secreto |
-| `SUPABASE_URL` | URL do projeto Supabase | Não secreto |
-| `SUPABASE_PUBLISHABLE_KEY` | Chave publicável do Supabase | Pública, mas somente usada no servidor neste backend |
-| `SUPABASE_SECRET_KEY` | Chave secreta do Supabase | Secreta; nunca use prefixo `NEXT_PUBLIC_` |
-| `CORS_ORIGIN` | URL exata do frontend, por exemplo `https://comprasfit.vercel.app` | Não secreto |
+1. No Supabase Auth, configure o provedor de e-mail, a Site URL do frontend e as URLs autorizadas de redirecionamento para os ambientes utilizados. Ative o login anônimo para habilitar “Entrar como visitante”.
+2. No PowerShell, use o executável `npx.cmd`. Em macOS ou Linux, use `npx`. Autentique a CLI com `npx.cmd supabase login` e confirme o projeto Supabase vinculado. Na raiz do backend, confira as migrations pendentes com `npx.cmd supabase db push --remote --dry-run` e aplique-as com `npx.cmd supabase db push --remote`. Elas criam o armazenamento privado por usuário e carregam o catálogo acadêmico com embalagens, receitas e preços.
+3. Para disponibilizar também os nomes comerciais do CSV na validação de sugestões, execute `node --env-file=.env.local scripts/import-catalog-to-supabase.mjs` com a URL e a chave secreta no arquivo local. A chave secreta fica exclusivamente no backend.
+4. Cadastre as variáveis em Production e nos ambientes de Preview utilizados. Faça o deploy do backend antes de publicar o Expo, que consome os novos campos de receitas. Alterações nas variáveis precisam de um novo deploy.
+5. Para desenvolvimento, copie `.env.example` para `.env.local`. `DATA_STORE=memory` usa dados de processo e continua exigindo Supabase Auth nas rotas privadas. Para testar a persistência, use `DATA_STORE=supabase` com um projeto de desenvolvimento migrado. Inicie a API com `npm run dev`.
 
-Não configure `SUPABASE_SECRET_KEY` no repositório, no frontend ou em variáveis iniciadas com `NEXT_PUBLIC_`.
-
-## Painel Vercel
-
-1. Crie um projeto e importe o repositório deste backend.
-2. Se o backend estiver em uma subpasta, escolha-a como **Root Directory**.
-3. Mantenha o preset **Next.js**. O build é `npm run build` e a instalação é `npm ci`.
-4. Cadastre as variáveis acima antes do primeiro deploy.
-5. Aplique a migration de segurança pendente antes de habilitar dados reais: `npx supabase db push`.
-6. Faça o deploy e copie a URL pública gerada. Ela será a base da API do frontend.
-7. Atualize `CORS_ORIGIN` com a URL final do frontend e faça um novo deploy do backend.
-
-## Segurança operacional
-
-- As rotas privadas exigem `Authorization: Bearer <JWT do Supabase>`.
-- Produtos e receitas são públicos; planejamento, validade e sugestões exigem autenticação.
-- CORS aceita somente as origens separadas por vírgula em `CORS_ORIGIN`; não use `*` em produção.
-- A chave secreta é usada apenas pelo servidor. Ela ignora RLS, portanto cada nova operação administrativa deve manter validação de usuário no backend.
-- A migration `20261028180000_user_ownership_rls.sql` adiciona `user_id`, revoga acesso direto da Data API e define políticas RLS de proprietário. A futura persistência de planejamento e validade deve gravar o `user_id` extraído do JWT.
+O provedor de sugestões atual funciona sem chave de IA.

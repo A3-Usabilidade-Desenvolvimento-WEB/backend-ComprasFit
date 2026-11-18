@@ -9,6 +9,8 @@ export interface PlanningParams {
   buyingPreference: BuyingPreference;
   vegetarian: boolean;
   recipeIds?: string[];
+  mealRecipeIds?: string[];
+  dayLabels?: string[];
 }
 
 export interface PlanningMeal {

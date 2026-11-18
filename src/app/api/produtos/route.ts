@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 // GET /api/produtos
 export async function GET(request: Request) {
-  return respond(listProducts(), request);
+  return respond(await listProducts(), request);
 }
 
 export function OPTIONS(request: Request) { return corsPreflight(request); }

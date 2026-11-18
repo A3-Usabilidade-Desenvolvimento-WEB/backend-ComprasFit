@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
 function configuredOrigins(): string[] {
-  return (process.env.CORS_ORIGIN ?? "http://localhost:5173")
+  const defaults = ["https://comprasfit-swart.vercel.app", "http://localhost:8081", "http://localhost:19006"];
+  return [...defaults, ...(process.env.CORS_ORIGIN ?? "")
     .split(",")
     .map((origin) => origin.trim())
-    .filter(Boolean);
+    .filter(Boolean)];
 }
 
 function headersFor(request: Request): Headers {
@@ -12,7 +13,7 @@ function headersFor(request: Request): Headers {
   const origin = request.headers.get("origin");
   if (origin && configuredOrigins().includes(origin)) {
     headers.set("Access-Control-Allow-Origin", origin);
-    headers.set("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
+    headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
     headers.set("Access-Control-Max-Age", "86400");
   }

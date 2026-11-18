@@ -24,3 +24,9 @@ describe("corsPreflight", () => {
     expect(response.headers.get("access-control-allow-origin")).toBeNull();
   });
 });
+
+it.each(["https://comprasfit-swart.vercel.app","http://localhost:8081","http://localhost:19006"])("libera o preflight de %s", origin => {
+  const { headers } = corsPreflight(new Request("https://api.example/api/produtos", { headers: { origin } }));
+  expect(headers.get("access-control-allow-origin")).toBe(origin);
+  expect(headers.get("access-control-allow-methods")?.split(",")).toEqual(["GET","POST","PUT","PATCH","DELETE","OPTIONS"]);
+});

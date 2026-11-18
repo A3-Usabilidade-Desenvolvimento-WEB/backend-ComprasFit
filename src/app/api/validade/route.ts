@@ -9,14 +9,14 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
-  return respond(listExpirations(), request);
+  return respond(await listExpirations(auth.user.id), request);
 }
 
 // POST /api/validade
 export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
-  return respond(registerExpiration(await readJson(request)), request);
+  return respond(await registerExpiration(await readJson(request), auth.user.id), request);
 }
 
 export function OPTIONS(request: Request) { return corsPreflight(request); }

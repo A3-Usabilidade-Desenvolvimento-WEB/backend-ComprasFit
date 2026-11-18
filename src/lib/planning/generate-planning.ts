@@ -64,10 +64,13 @@ export function scheduleMeals(params: PlanningParams, recipes: Recipe[]): Schedu
   const meals: ScheduledMeal[] = [];
 
   for (let index = 0; index < totalMeals; index++) {
+    const id = params.mealRecipeIds?.[index];
+    const recipe = id ? recipes.find(candidate => candidate.id === id) : recipes[index % recipes.length];
+    if (!recipe) throw new AppError(422, "Receita incompatível com o planejamento");
     meals.push({
       day: Math.floor(index / params.mealsPerDay) + 1,
       slot: (index % params.mealsPerDay) + 1,
-      recipe: recipes[index % recipes.length],
+      recipe,
     });
   }
   return meals;

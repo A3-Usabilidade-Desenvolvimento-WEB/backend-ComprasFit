@@ -10,7 +10,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
   const { id } = await params;
-  return respond(getPlanning(id), request);
+  return respond(await getPlanning(id, auth.user.id), request);
 }
 
 export function OPTIONS(request: Request) { return corsPreflight(request); }

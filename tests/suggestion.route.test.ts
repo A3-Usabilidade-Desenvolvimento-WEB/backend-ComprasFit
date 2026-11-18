@@ -12,8 +12,8 @@ beforeEach(() => resetStore());
 
 describe("POST /api/ia/sugestao", () => {
   it("responde com sugestão determinística quando o planejamento tem ingredientes autorizados", async () => {
-    const created = createPlanning({ budget: 300, periodDays: 7, people: 4 }).body as { id: string };
-    const planning = planningRepository.findById(created.id);
+    const created = (await createPlanning({ budget: 300, periodDays: 7, people: 4 }, "test-user")).body as { id: string };
+    const planning = await planningRepository.findById(created.id, "test-user");
     if (!planning) throw new Error("Planejamento deveria existir");
     planning.shoppingList.items = [
       { ...planning.shoppingList.items[0], productName: "Arroz" },
